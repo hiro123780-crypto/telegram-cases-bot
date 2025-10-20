@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Кейсы</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .balance-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .balance-amount {
+            font-size: 2em;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .cases-grid {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .case-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .case-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .case-emoji {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .case-price {
+            font-size: 1.2em;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .inventory-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .item-emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+        
+        .item-info {
+            flex-grow: 1;
+            text-align: left;
+        }
+        
+        .item-count {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+        
+        .rarity-common { border-color: #808080; }
+        .rarity-rare { border-color: #0070dd; }
+        .rarity-epic { border-color: #a335ee; }
+        .rarity-legendary { border-color: #ff8000; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            border: 3px solid;
+            max-width: 300px;
+            width: 90%;
+        }
+        
+        .reward-emoji {
+            font-size: 4em;
+            margin: 20px 0;
+        }
+        
+        .reward-name {
+            font-size: 1.5em;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .reward-rarity {
+            font-size: 1.2em;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .button {
+            background: #FFD700;
+            color: #333;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid red;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Кейсы</h1>
+            <p>Открывай кейсы и получай предметы!</p>
+        </div>
+        
+        <div class="balance-card">
+            <div>Твой баланс</div>
+            <div class="balance-amount" id="balance">0</div>
+            <div>монет</div>
+        </div>
+        
+        <div class="cases-grid" id="casesGrid">
+            <div class="loading">Загрузка кейсов...</div>
+        </div>
+        
+        <div class="inventory-section">
+            <h3>📦 Мой инвентарь</h3>
+            <div id="inventory">
+                <div class="loading">Загрузка инвентаря...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="rewardModal">
+        <div class="modal-content">
+            <h2>🎉 Поздравляем!</h2>
+            <div class="reward-emoji" id="rewardEmoji"></div>
+            <div class="reward-name" id="rewardName"></div>
+            <div class="reward-rarity" id="rewardRarity"></div>
+            <div style="margin: 15px 0;">Новый баланс: <span id="newBalance"></span> монет</div>
+            <button class="button" onclick="closeReward()">Продолжить</button>
+        </div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        let userData = {};
+        
+        function loadUserData() {
+            showLoading('Загрузка данных...');
+            
+            const data = {
+                action: 'get_user_data'
+            };
+            
+            tg.sendData(JSON.stringify(data));
+        }
+        
+        function openCase(caseId) {
+            showLoading('Открываем кейс...');
+            
+            const data = {
+                action: 'open_case',
+                case_id: caseId
+            };
+            
+            tg.sendData(JSON.stringify(data));
+        }
+        
+        function showLoading(message) {
+            document.getElementById('casesGrid').innerHTML = `<div class="loading">${message}</div>`;
+            document.getElementById('inventory').innerHTML = `<div class="loading">${message}</div>`;
+        }
+        
+        function updateUI() {
+            document.getElementById('balance').textContent = userData.balance;
+            
+            const casesGrid = document.getElementById('casesGrid');
+            casesGrid.innerHTML = '';
+            
+            const cases = [
+                {
+                    id: 1,
+                    name: "📦 Обычный кейс",
+                    price: 50,
+                    color: "#808080",
+                    image: "📦",
+                    items: [
+                        {name: "Деревянный меч", rarity: "common", emoji: "⚔️"},
+                        {name: "Стальной меч", rarity: "rare", emoji: "🔪"},
+                        {name: "Амулет силы", rarity: "epic", emoji: "🔮"},
+                        {name: "Экскалибур", rarity: "legendary", emoji: "⚜️"}
+                    ]
+                },
+                {
+                    id: 2,
+                    name: "🎁 Премиум кейс",
+                    price: 100,
+                    color: "#FFD700", 
+                    image: "🎁",
+                    items: [
+                        {name: "Золотой щит", rarity: "rare", emoji: "🛡️"},
+                        {name: "Огненный посох", rarity: "epic", emoji: "🔥"},
+                        {name: "Кристальный шар", rarity: "legendary", emoji: "💎"}
+                    ]
+                }
+            ];
+            
+            cases.forEach(caseItem => {
+                const caseCard = document.createElement('div');
+                caseCard.className = `case-card rarity-${caseItem.items[0].rarity}`;
+                caseCard.style.borderColor = caseItem.color;
+                caseCard.onclick = () => openCase(caseItem.id);
+                
+                caseCard.innerHTML = `
+                    <div class="case-emoji">${caseItem.image}</div>
+                    <h3>${caseItem.name}</h3>
+                    <div class="case-price">${caseItem.price} монет</div>
+                    <div style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
+                        ${caseItem.items.map(item => item.emoji).join(' ')}
+                    </div>
+                `;
+                
+                casesGrid.appendChild(caseCard);
+            });
+            
+            const inventory = document.getElementById('inventory');
+            inventory.innerHTML = '';
+            
+            if (!userData.inventory || userData.inventory.length === 0) {
+                inventory.innerHTML = '<div style="text-align: center; padding: 20px; opacity: 0.7;">Инвентарь пуст</div>';
+                return;
+            }
+            
+            userData.inventory.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'inventory-item';
+                
+                itemElement.innerHTML = `
+                    <div style="display: flex; align-items: center;">
+                        <div class="item-emoji">${item.emoji}</div>
+                        <div class="item-info">
+                            <div style="font-weight: bold;">${item.name}</div>
+                            <div style="font-size: 0.8em; opacity: 0.8;">${item.rarity}</div>
+                        </div>
+                    </div>
+                    <div class="item-count">${item.count} шт.</div>
+                `;
+                
+                inventory.appendChild(itemElement);
+            });
+        }
+        
+        function showReward(item, newBalance, casePrice) {
+            const modal = document.getElementById('rewardModal');
+            const rarityColors = {
+                'common': '#808080',
+                'rare': '#0070dd', 
+                'epic': '#a335ee',
+                'legendary': '#ff8000'
+            };
+            
+            document.getElementById('rewardEmoji').textContent = item.emoji;
+            document.getElementById('rewardName').textContent = item.name;
+            document.getElementById('rewardRarity').textContent = item.rarity;
+            document.getElementById('rewardRarity').style.background = rarityColors[item.rarity];
+            document.getElementById('newBalance').textContent = newBalance;
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeReward() {
+            document.getElementById('rewardModal').style.display = 'none';
+            loadUserData();
+        }
+        
+        tg.onEvent('webAppDataReceived', (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                
+                if (data.error) {
+                    showError(data.error);
+                    loadUserData();
+                    return;
+                }
+                
+                if (data.balance !== undefined) {
+                    userData = data;
+                    updateUI();
+                } else if (data.success) {
+                    showReward(data.item, data.new_balance, data.case_price);
+                }
+            } catch (e) {
+                console.error('Error parsing data:', e);
+                showError('Ошибка загрузки данных');
+            }
+        });
+        
+        function showError(message) {
+            const casesGrid = document.getElementById('casesGrid');
+            casesGrid.innerHTML = `<div class="error">${message}</div>`;
+            
+            const retryButton = document.createElement('button');
+            retryButton.className = 'button';
+            retryButton.textContent = 'Попробовать снова';
+            retryButton.onclick = loadUserData;
+            retryButton.style.marginTop = '10px';
+            casesGrid.appendChild(retryButton);
+        }
+        
+        loadUserData();
+    </script>
+</body>
+</html>
