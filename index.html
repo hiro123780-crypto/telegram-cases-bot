@@ -137,6 +137,13 @@
             border: 3px solid;
             max-width: 300px;
             width: 90%;
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
         }
         
         .reward-emoji {
@@ -170,6 +177,11 @@
             cursor: pointer;
             margin-top: 20px;
             width: 100%;
+            transition: transform 0.2s ease;
+        }
+        
+        .button:hover {
+            transform: scale(1.05);
         }
         
         .loading {
@@ -225,11 +237,14 @@
     </div>
 
     <script>
+        // Telegram Web App API
         let tg = window.Telegram.WebApp;
         tg.expand();
+        tg.enableClosingConfirmation();
         
         let userData = {};
         
+        // Загрузка данных пользователя
         function loadUserData() {
             showLoading('Загрузка данных...');
             
@@ -240,6 +255,7 @@
             tg.sendData(JSON.stringify(data));
         }
         
+        // Открытие кейса
         function openCase(caseId) {
             showLoading('Открываем кейс...');
             
@@ -251,17 +267,22 @@
             tg.sendData(JSON.stringify(data));
         }
         
+        // Показать загрузку
         function showLoading(message) {
             document.getElementById('casesGrid').innerHTML = `<div class="loading">${message}</div>`;
             document.getElementById('inventory').innerHTML = `<div class="loading">${message}</div>`;
         }
         
+        // Обновление интерфейса
         function updateUI() {
+            // Обновляем баланс
             document.getElementById('balance').textContent = userData.balance;
             
+            // Обновляем кейсы
             const casesGrid = document.getElementById('casesGrid');
             casesGrid.innerHTML = '';
             
+            // Создаем кейсы
             const cases = [
                 {
                     id: 1,
@@ -308,6 +329,7 @@
                 casesGrid.appendChild(caseCard);
             });
             
+            // Обновляем инвентарь
             const inventory = document.getElementById('inventory');
             inventory.innerHTML = '';
             
@@ -335,6 +357,7 @@
             });
         }
         
+        // Показать награду
         function showReward(item, newBalance, casePrice) {
             const modal = document.getElementById('rewardModal');
             const rarityColors = {
@@ -355,23 +378,27 @@
         
         function closeReward() {
             document.getElementById('rewardModal').style.display = 'none';
-            loadUserData();
+            loadUserData(); // Перезагружаем данные
         }
         
+        // Обработка входящих данных от бота
         tg.onEvent('webAppDataReceived', (event) => {
             try {
+                console.log('Received data from bot:', event);
                 const data = JSON.parse(event.data);
                 
                 if (data.error) {
                     showError(data.error);
-                    loadUserData();
+                    loadUserData(); // Перезагружаем данные
                     return;
                 }
                 
                 if (data.balance !== undefined) {
+                    // Это данные пользователя
                     userData = data;
                     updateUI();
                 } else if (data.success) {
+                    // Это результат открытия кейса
                     showReward(data.item, data.new_balance, data.case_price);
                 }
             } catch (e) {
@@ -384,6 +411,7 @@
             const casesGrid = document.getElementById('casesGrid');
             casesGrid.innerHTML = `<div class="error">${message}</div>`;
             
+            // Добавляем кнопку для повторной загрузки
             const retryButton = document.createElement('button');
             retryButton.className = 'button';
             retryButton.textContent = 'Попробовать снова';
@@ -392,7 +420,14 @@
             casesGrid.appendChild(retryButton);
         }
         
+        // Загружаем данные при старте
         loadUserData();
+        
+        // Добавляем обработчик ошибок
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e);
+            showError('Произошла ошибка в приложении');
+        });
     </script>
 </body>
 </html>
